@@ -34,16 +34,21 @@ typedef struct Jogo {
 } Game;
 
 
-// Funções 
+// Funções principais
 Board** CriaTabuleiro( int size );
 Game InserePalavras( Game jogo, int size);
-Word* InsereNaLista( Word* list, char *word, int i, int j, int way, int listSize );
-void PrintaTabuleiro(int size, Board **board);
-int EncontraCaminho( Board **board, int size, int i, int j, int wLen);
 Game VerificaPalavra ( Game jogo, Word *list, char *word );
+
+// Imprimir
+void PrintaTabuleiro(int size, Board **board);
+void PrintaLista( Word *list, int listSize );
+
+// Funções auxiliares 
+int EncontraCaminho( Board **board, int size, int i, int j, int wLen);
+Word* InsereNaLista( Word* list, char *word, int i, int j, int way, int listSize );
 Game AtualizaTabuleiro( Game jogo, Word *list, int listIndex );
-
-
+void shuffle( int *arr, int size );
+void freeJogo( Game jogo );
 
 // Main 
 
@@ -52,7 +57,7 @@ int main (void) {
     int matrixSize = 0;
     
     do {
-        printf("Digite o tamanho do tabuleiro ( 2 a 20 ): ");
+        printf("Digite o tamanho do tabuleiro ( 5 a 20 ): ");
         scanf("%d", &matrixSize);
     } while ( matrixSize > 20 || matrixSize < 2);
 
@@ -66,27 +71,37 @@ int main (void) {
     PrintaTabuleiro( jogo.tamanhoTabuleiro, jogo.board );
 
     char palavra[20];
+    
+    printf(" Encontre as seguintes palavras: \n\n");
+    PrintaLista( jogo.lista, jogo.tamanhoLista );
 
     printf("\n| Caso queira desistir digite '0' |\n");
+    printf("\n| Caso queira ver a lista novamente digite '1'|\n");
+
     while ( jogo.palavrasRestantes > 0 ) {
 
         printf("\n| Palavras Restantes: %d |\nInsira a palavra que voce achou: ", jogo.palavrasRestantes);
         scanf("%s", palavra );
 
-        if ( strcmp( "0", palavra)  == 0 ) {
+        if ( strcmp( "0", palavra) == 0 ) {
             printf("Quem sabe da proxima vez...");
             exit(0);
         }
+        if ( strcmp( "1", palavra) == 0 ) {
+            PrintaLista( jogo.lista, jogo.tamanhoLista );
+        } else {
     
-        int len = strlen(palavra);
-        for ( int i = 0; i < len; i++ ) {
-            palavra[i] = toupper(palavra[i]);
+            int len = strlen(palavra);
+            for ( int i = 0; i < len; i++ ) {
+                palavra[i] = toupper(palavra[i]);
+            }
+            jogo = VerificaPalavra( jogo, jogo.lista, palavra );
         }
-        jogo = VerificaPalavra( jogo, jogo.lista, palavra );
         
     }
 
     printf(" *** VOCE ENCONTROU TODAS AS PALAVRAS, PARABENS! *** ");
+    freeJogo( jogo );
 
 }
 
@@ -190,32 +205,60 @@ Game InserePalavras ( Game jogo, int size) {
                 }   
 
                 switch ( path ) {
-
+                    
                     case 1: // BAIXO
                         for ( int i = randomI; i < randomI + len; i++ ) {
-                            jogo.board[i][randomJ].Ch = word[wIndex];
+                            jogo.board[i][randomJ].Ch = toupper(word[wIndex]);
                             jogo.board[i][randomJ].isWord = true;
                             wIndex++;
                         }
                         break;
                     case 2: // DIREITA
                         for ( int j = randomJ; j < randomJ + len; j++ ) {
-                            jogo.board[randomI][j].Ch = word[wIndex];
+                            jogo.board[randomI][j].Ch = toupper(word[wIndex]);
                             jogo.board[randomI][j].isWord = true;
                             wIndex++;
                         }
                         break;
                     case 3: // CIMA
                         for ( int i = 0; i < len; i++ ) {
-                            jogo.board[randomI-i][randomJ].Ch = word[wIndex];
+                            jogo.board[randomI-i][randomJ].Ch = toupper(word[wIndex]);
                             jogo.board[randomI-i][randomJ].isWord = true;
                             wIndex++;
                         }
                         break;
                     case 4: // ESQUERDA
                         for ( int j = 0; j < len; j++ ) {
-                            jogo.board[randomI][randomJ-j].Ch = word[wIndex];
+                            jogo.board[randomI][randomJ-j].Ch = toupper(word[wIndex]);
                             jogo.board[randomI][randomJ-j].isWord = true;
+                            wIndex++;
+                        }
+                        break;
+                    case 5: // DIAGONAL DIREITA INFERIOR
+                        for( int c = 0; c < len; c++, randomI++, randomJ++ ){
+                            jogo.board[randomI][randomJ].Ch = toupper(word[wIndex]);
+                            jogo.board[randomI][randomJ].isWord = true;
+                            wIndex++;
+                        }
+                        break;
+                    case 6: // DIAGONAL DIREITA SUPERIOR
+                        for( int c = 0; c < len; c++, randomI--, randomJ++ ){
+                            jogo.board[randomI][randomJ].Ch = toupper(word[wIndex]);
+                            jogo.board[randomI][randomJ].isWord = true;
+                            wIndex++;
+                        }
+                        break;
+                    case 7: // DIAGONAL ESQUERDA SUPERIOR
+                        for( int c = 0; c < len; c++, randomI--, randomJ-- ){
+                            jogo.board[randomI][randomJ].Ch = toupper(word[wIndex]);
+                            jogo.board[randomI][randomJ].isWord = true;
+                            wIndex++;
+                        }
+                        break;
+                    case 8: // DIAGONAL ESQUEDA INFERIOR
+                        for( int c = 0; c < len; c++, randomI++, randomJ-- ){
+                            jogo.board[randomI][randomJ].Ch = toupper(word[wIndex]);
+                            jogo.board[randomI][randomJ].isWord = true;
                             wIndex++;
                         }
                         break;
@@ -240,27 +283,19 @@ Game InserePalavras ( Game jogo, int size) {
 
 int EncontraCaminho( Board **board, int size, int i, int j, int wLen) {
 
-    
-    int randomizer[4] = {0,0,0,0};
-    int num = 1;
-
-    while ( num != 5 ) {
-        int rIndex = rand() % 4;
-        if ( randomizer[rIndex] == 0 ) {
-            randomizer[rIndex] = num;
-            num++;
-        }  
-    }
+    int randomizer[8] = {1,2,3,4,5,6,7,8};
+    shuffle( randomizer, 8);
 
     int c = 0;
     int k = 0;
     bool finded = true;
     
-    while ( k < 4 ) {
+    while ( k < 8 ) {
         switch ( randomizer[k] ) {
     
         case 1: // BAIXO
             if ( i + wLen <= size ){ 
+                finded = true;
                 for( c = i; c < i + wLen; c++ ) {
                     if ( board[c][j].isWord ) {
                         finded = false;
@@ -306,22 +341,64 @@ int EncontraCaminho( Board **board, int size, int i, int j, int wLen) {
                 if ( finded ) return 4;
             }
             break;
+        case 5: // DIAGONAL INFERIOR DIREITA
+            if ( i + wLen <= size && j + wLen <= size ) {
+                finded = true;
+                for ( c = 0; c < wLen; c++) {
+                    if ( board[i+c][j+c].isWord ) {
+                        finded = false;
+                        break;
+                    }
+                }
+                if ( finded ) return 5;
+            }
+            break;
+        case 6: // DIAGONAL SUPERIOR DIREITA
+            if( i - wLen + 1 >= 0 && j + wLen <= size ){
+                finded = true;
+                for ( c = 0; c < wLen; c++) {
+                    if( board[i-c][j+c].isWord ) {
+                        finded = false;
+                        break;
+                    }
+                }
+                if ( finded ) return 6;
+            }
+            break;
+        case 7: // DIAGONAL SUPERIOR ESQUERDA
+            if ( i - wLen + 1 >= 0 && j - wLen + 1 >= 0 ) {
+                finded = true;
+                for ( c = 0; c < wLen; c++) {
+                    if ( board[i-c][j-c].isWord ) {
+                        finded = false;
+                        break;
+                    }
+                }
+                if ( finded ) return 7;
+            }
+            break;
+        case 8: // DIAGONAL INFERIOR ESQUERDA
+               if ( i + wLen <= size && j - wLen + 1 >= 0 ) {
+                finded = true;
+                for ( c = 0; c < wLen; c++ ) {
+                    if ( board[i+c][j-c].isWord ) {
+                        finded = false;
+                        break;
+                    }
+                }
+                if ( finded ) return 8;
+            }
+            break;
         }
-        k++;
+    k++;
     }
-
     return -1;
 
 }
 
 Word* InsereNaLista( Word *list, char *word, int i, int j, int way, int listSize ) {
 
-    Word *temp = ( Word *)realloc( list , sizeof(Word) * listSize);
-    if ( temp == NULL ) {
-        printf(" realloc falhou");
-        return list;
-    }
-    list = temp;    
+    list = ( Word *)realloc( list , sizeof(Word) * listSize);
 
     list[listSize-1].direction = way;
     list[listSize-1].index[0] = i;
@@ -385,7 +462,26 @@ Game AtualizaTabuleiro( Game jogo, Word *list, int listIndex ) {
                 jogo.board[i][j-k].Ch = '*';
             }
             break;
-
+        case 5: // DIAGONAL INFERIOR DIREITA
+            for ( int k = 0; k < len; k++ ) {
+                jogo.board[i+k][j+k].Ch = '*';
+            }
+            break;
+        case 6: // DIAGONAL SUPERIOR DIREITA
+            for ( int k = 0; k < len; k++ ) {
+                jogo.board[i-k][j+k].Ch = '*';
+            }
+            break;
+        case 7: // DIAGONAL SUPERIOR ESQUERDA
+            for ( int k = 0; k < len; k++ ) {
+                jogo.board[i-k][j-k].Ch = '*';
+            }
+            break;
+        case 8: // DIAGONAL SUPERIOR ESQUERDA
+            for ( int k = 0; k < len; k++ ) {
+                jogo.board[i+k][j-k].Ch = '*';
+            }
+            break;
     }
 
     jogo.lista = list;
@@ -394,3 +490,38 @@ Game AtualizaTabuleiro( Game jogo, Word *list, int listIndex ) {
 
 }
 
+void PrintaLista( Word *list, int listSize ) {
+
+    for( int i = 0; i < listSize-1; i++ ) {
+        printf("%s ", list[i].palavra);
+        if ( list[i].revelada ){
+            printf("( X )\n");
+        } else {
+            printf("(  )\n");
+        }
+    }
+}
+
+void shuffle( int *arr, int size ) {
+
+    for ( int i = 0; i < size; i++ ) {
+
+        int randIndex = rand() % size;
+
+        int temp = arr[i];
+        arr[i] = arr[randIndex];
+        arr[randIndex] = temp;
+
+    }
+
+}
+
+void freeJogo( Game jogo ) {
+
+    for( int i = 0; i < jogo.tamanhoTabuleiro; i++ ) {
+        free(jogo.board[i]);
+    }
+    free(jogo.board);
+    free(jogo.lista);
+
+}
