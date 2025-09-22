@@ -38,6 +38,7 @@ typedef struct Jogo {
 Board** CriaTabuleiro( int size );
 Game InserePalavras( Game jogo, int size);
 Game VerificaPalavra ( Game jogo, Word *list, char *word );
+void CacaPalavras( Game jogo );
 
 // Imprimir
 void PrintaTabuleiro(int size, Board **board);
@@ -54,53 +55,22 @@ void freeJogo( Game jogo );
 
 int main (void) {
 
-    int matrixSize = 0;
-    
+    Game jogo;
+
     do {
-        printf("Digite o tamanho do tabuleiro ( 5 a 20 ): ");
-        scanf("%d", &matrixSize);
-    } while ( matrixSize > 20 || matrixSize < 2);
+        printf("Digite o tamanho do tabuleiro ( 5 a 25 ): ");
+        scanf("%d", &jogo.tamanhoTabuleiro);
+    } while ( jogo.tamanhoTabuleiro > 25 || jogo.tamanhoTabuleiro < 2);
 
    
-    Game jogo;
-    jogo.board = CriaTabuleiro( matrixSize );
-    jogo.tamanhoTabuleiro = matrixSize;
+    jogo.board = CriaTabuleiro( jogo.tamanhoTabuleiro );
+    
     jogo.lista = NULL;
-
-    jogo = InserePalavras( jogo, matrixSize );
+    jogo = InserePalavras( jogo, jogo.tamanhoTabuleiro);
     PrintaTabuleiro( jogo.tamanhoTabuleiro, jogo.board );
 
-    char palavra[20];
+    CacaPalavras( jogo );
     
-    printf(" Encontre as seguintes palavras: \n\n");
-    PrintaLista( jogo.lista, jogo.tamanhoLista );
-
-    printf("\n| Caso queira desistir digite '0' |\n");
-    printf("\n| Caso queira ver a lista novamente digite '1'|\n");
-
-    while ( jogo.palavrasRestantes > 0 ) {
-
-        printf("\n| Palavras Restantes: %d |\nInsira a palavra que voce achou: ", jogo.palavrasRestantes);
-        scanf("%s", palavra );
-
-        if ( strcmp( "0", palavra) == 0 ) {
-            printf("Quem sabe da proxima vez...");
-            exit(0);
-        }
-        if ( strcmp( "1", palavra) == 0 ) {
-            PrintaLista( jogo.lista, jogo.tamanhoLista );
-        } else {
-    
-            int len = strlen(palavra);
-            for ( int i = 0; i < len; i++ ) {
-                palavra[i] = toupper(palavra[i]);
-            }
-            jogo = VerificaPalavra( jogo, jogo.lista, palavra );
-        }
-        
-    }
-
-    printf(" *** VOCE ENCONTROU TODAS AS PALAVRAS, PARABENS! *** ");
     freeJogo( jogo );
 
 }
@@ -524,4 +494,40 @@ void freeJogo( Game jogo ) {
     free(jogo.board);
     free(jogo.lista);
 
+}
+
+void CacaPalavras ( Game jogo ) {
+
+    char palavra[20];
+    
+    printf(" Encontre as seguintes palavras: \n\n");
+    PrintaLista( jogo.lista, jogo.tamanhoLista );
+
+    printf("\n| Caso queira desistir digite '0' |\n");
+    printf("\n| Caso queira ver a lista novamente digite '1'|\n");
+
+    while ( jogo.palavrasRestantes > 0 ) {
+
+        printf("\n| Palavras Restantes: %d |\nInsira a palavra que voce achou: ", jogo.palavrasRestantes);
+        scanf("%s", palavra );
+
+        if ( strcmp( "0", palavra) == 0 ) {
+            printf("Quem sabe da proxima vez...");
+            exit(0);
+        }
+        if ( strcmp( "1", palavra) == 0 ) {
+            PrintaLista( jogo.lista, jogo.tamanhoLista );
+        } else {
+    
+            int len = strlen(palavra);
+            for ( int i = 0; i < len; i++ ) {
+                palavra[i] = toupper(palavra[i]);
+            }
+            jogo = VerificaPalavra( jogo, jogo.lista, palavra );
+        }
+        
+    }
+
+    printf(" *** VOCE ENCONTROU TODAS AS PALAVRAS, PARABENS! *** ");
+    
 }
