@@ -60,7 +60,7 @@ int main (void) {
     do {
         printf("Digite o tamanho do tabuleiro ( 5 a 25 ): ");
         scanf("%d", &jogo.tamanhoTabuleiro);
-    } while ( jogo.tamanhoTabuleiro > 25 || jogo.tamanhoTabuleiro < 5);
+    } while ( jogo.tamanhoTabuleiro > 100 || jogo.tamanhoTabuleiro < 2);
 
    
     jogo.board = CriaTabuleiro( jogo.tamanhoTabuleiro );
