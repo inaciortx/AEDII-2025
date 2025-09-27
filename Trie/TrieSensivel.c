@@ -23,56 +23,13 @@ void PrintaTrie( Node *node );
 Node* RemoverPalavra( Node *root, char *word );
 Node* RemoveDaTrie( Node *node, char *word, int index );
 void LiberaTrie( Node *root );
+void Menu( Node *root );
 
 int main ( void ) {
 
     Node *root = NULL;
-
-     root = InsereNaTrie(root, "Casa");
-    root = InsereNaTrie(root, "casaco");
-    root = InsereNaTrie(root, "caso");
-    root = InsereNaTrie(root, "casa");
-    root = InsereNaTrie(root, "Gato");
-    root = InsereNaTrie(root, "gato");
-    root = InsereNaTrie(root, "sol");
-    root = InsereNaTrie(root, "soldado");
-    
-    PrintaTrie(root);
-
-    ProcuraNaTrie(root, "Casa");
-    ProcuraNaTrie(root, "casa");
-    ProcuraNaTrie(root, "CASA");
-    ProcuraNaTrie(root, "soldado");
-
-    BuscaPorPrefixo(root, "cas");
-    BuscaPorPrefixo(root, "sol");
-    BuscaPorPrefixo(root, "Ga");
-    
-    root = RemoverPalavra(root, "soldado");
-    PrintaTrie(root);
-
-    root = RemoverPalavra(root, "caso");
-    PrintaTrie(root);
-
-    root = RemoverPalavra(root, "sol");
-    PrintaTrie(root);
-
-    root = RemoverPalavra(root, "Gato");
-    PrintaTrie(root);
-
-    root = RemoverPalavra(root, "Casa");
-    PrintaTrie(root);
-
-    root = RemoverPalavra(root, "casaco");
-    root = RemoverPalavra(root, "gato");
-    root = RemoverPalavra(root, "casa");
-    PrintaTrie(root);
-
-    root = InsereNaTrie(root, "reinserido");
-    root = InsereNaTrie(root, "teste");
-    PrintaTrie(root);
-
-    LiberaTrie(root);
+    Menu( root );
+    LiberaTrie( root );
   
 }
 
@@ -260,4 +217,66 @@ void LiberaTrie(Node *node) {
     free(node->childrens);
     free(node);
 
+}
+
+
+void Menu( Node *root ) {
+
+    int menu = 0;
+    char word[256];
+
+    while ( menu != 5 ) {
+
+        printf("\n===== ARVORE TRIE =====\n");
+        printf("(1) Inserir\n(2) Buscar\n(3) Remover\n(4) Imprimir\n(5) Sair\nDigite sua escolha: ");
+        scanf("%d", &menu );
+
+        switch( menu ) {
+            
+            case 1:
+                printf("\nDigite a palavra para ser inserida: ");
+                scanf("%s", word );
+                root = InsereNaTrie( root, word );
+                break;
+
+            case 2:
+                do {
+                    
+                printf("(1) Buscar Palavra\n(2) Buscar por Prefixo");
+                scanf("%d", &menu );
+
+                if( menu > 2 && menu < 1 ) {
+                    printf("Digite um numero valido!\n");
+                }
+
+                } while ( menu > 2 && menu < 1 );
+
+                switch( menu ) {
+
+                    case 1: 
+                        printf("\nDigite a palavra que quer buscar: ");
+                        scanf("%s", word );
+                        ProcuraNaTrie( root, word );
+                        break;
+                    case 2:
+                        printf("\nDigite o prefixo que quer buscar: ");
+                        scanf("%s", word );
+                        BuscaPorPrefixo( root, word );
+                        break;
+                }
+                break;
+            
+            case 3:
+                printf("\nDigite a palavra que quer remover ");
+                scanf("%s", word );
+                root = RemoverPalavra( root, word );                        
+                break;
+            
+            case 4:
+                PrintaTrie( root );
+                break;
+
+        }
+        
+    }
 }
