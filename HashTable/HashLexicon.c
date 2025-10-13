@@ -7,7 +7,8 @@
 #include <locale.h>
 #include <math.h>
 
-#define HASH_SIZE 60539
+#define HASH_SIZE 30000
+int reHashFactor = 1;
 
 typedef struct Informacao {
 
@@ -27,20 +28,24 @@ typedef struct Nodo {
 
 typedef struct HashTable {
 
-    Node node[HASH_SIZE];
-    int loadFactor;
+    Node *node;
+    int freeSlots;
 
 } Hash;
 
 Hash *InsereDeArquivo ( Hash *hash );
+
 int PRH ( char *word ); //Polynomial rolling hash
 int Hash2( char *word );
+int Hash3( char *word, int t);
+
 Hash *InicializaHash ( void );
 void Menu( Hash *hash );
 void PrintaInfos( Info infos );
 bool BuscaNaHash( Hash *hash, char *word );
-Hash* InserePalavra( Hash *hash );
+Hash* InserePalavra( Hash *hash, char *word, char *class, int polarity, char classification );
 Hash* RemovePalavra( Hash *hash );
+Hash* ReHashing( Hash *hash );
 
 int main (void) {
 
@@ -57,15 +62,16 @@ int main (void) {
 Hash* InicializaHash( void ) {
 
     Hash *hashTable = ( Hash *)malloc(sizeof(Hash));
+    hashTable->node = malloc( sizeof(Node) * ( HASH_SIZE * reHashFactor) );
+    hashTable->freeSlots = HASH_SIZE * reHashFactor;
 
-    for ( int i = 0; i < HASH_SIZE; i++ ) {
+    for ( int i = 0; i < HASH_SIZE * reHashFactor; i++ ) {
 
         hashTable->node[i].state = -1;
         hashTable->node[i].infos.word[0] = '\0';
         hashTable->node[i].infos.class[0] = '\0';
         hashTable->node[i].infos.classification = '\0';
         hashTable->node[i].infos.polarity = 0;    
-        hashTable->loadFactor = HASH_SIZE; 
     }
 
     return hashTable;
@@ -119,10 +125,10 @@ Hash* InsereDeArquivo ( Hash *hash ) {
         } else {
 
             int t = 1;
-            int key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+            int key = Hash3(word, t);
 
             while( hash->node[key].state != -1 ) {
-                key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+                key = Hash3(word, t);
                 t++;
             }
 
@@ -132,7 +138,10 @@ Hash* InsereDeArquivo ( Hash *hash ) {
             hash->node[key].infos.classification = classification;
             hash->node[key].state = 0;
         } 
-        hash->loadFactor--;
+        hash->freeSlots--;
+        if ( hash->freeSlots < (HASH_SIZE * reHashFactor * 0.3) ) {
+            hash = ReHashing( hash );
+        }
     }
 
     return hash;   
@@ -148,7 +157,7 @@ int PRH ( char *word ) { //Polynomial Rolling Hash
 
     }
     
-    return abs(key % HASH_SIZE);
+    return abs(key % ( HASH_SIZE * reHashFactor ) );
 
 }
 
@@ -162,14 +171,21 @@ int Hash2 ( char *word ) {
 
     }
 
-    return abs( key % HASH_SIZE );
+    return abs( key % ( HASH_SIZE * reHashFactor ));
 
+}
+
+int Hash3 ( char *word, int t ) {
+
+    return abs( ( PRH(word) + Hash2(word) * t ) % ( HASH_SIZE * reHashFactor ) );
 }
 
 void Menu( Hash *hash ) {
 
     int menu = -1;
     char word[256];
+    char class[256];
+    int polarity = -2;
 
     while ( menu != 0 ) {
 
@@ -191,12 +207,30 @@ void Menu( Hash *hash ) {
                 hash = RemovePalavra( hash );
                 break;
             case 3:
-                hash = InserePalavra( hash );
+                
+                printf("\nDigite as informações que quer inserir\nPalavra: ");
+                scanf("%s", word);
+
+                if ( BuscaNaHash( hash, word ) ){
+                    printf("\nPalavra já está na Hash!\n");
+                    break;
+                }
+
+                printf("Classe gramatical: ");
+                scanf("%s", class);
+                while ( polarity > 1 || polarity < -1 ) {
+                    printf("Polaridade ( -1 / 0 / 1 ): ");
+                    scanf("%d", &polarity);
+                }
+                hash = InserePalavra( hash, word, class, polarity, 'M' );
+                printf("\nPalavra adicionada com sucesso!\n");
                 break;
             case 4:
-                printf("\nAtualmente a Hash tem %d posições livres\n", hash->loadFactor );
+                printf("\nAtualmente a Hash tem %d posições livres\n", hash->freeSlots );
                 break;
             case 0:
+                free(hash->node);
+                free(hash);
                 break;
         }
     }
@@ -210,90 +244,77 @@ void PrintaInfos( Info infos ) {
 
 bool BuscaNaHash( Hash *hash, char* word ) {
 
-    if ( strcmp( word, hash->node[abs(PRH(word))].infos.word ) == 0 && hash->node[abs(PRH(word))].state == 0) {
+    int key = PRH(word);
 
-        PrintaInfos( hash->node[abs(PRH(word))].infos );
+    if ( strcmp( word, hash->node[key].infos.word ) == 0 && hash->node[key].state == 0) {
 
-    } else if ( strcmp( word, hash->node[abs(Hash2(word))].infos.word ) == 0 && hash->node[abs(Hash2(word))].state == 0) {
+        PrintaInfos( hash->node[key].infos );
 
-        PrintaInfos( hash->node[abs(Hash2(word))].infos );
+    } else if ( strcmp( word, hash->node[(Hash2(word))].infos.word ) == 0 && hash->node[(Hash2(word))].state == 0) {
+
+        PrintaInfos( hash->node[(Hash2(word))].infos );
 
     } else {
 
         int t = 1;
-        int key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+        int key = Hash3( word, t );
 
         while( strcmp( hash->node[key].infos.word, word) != 0 && t < 1000 ) {            
-            key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+            key = Hash3( word, t );
             t++;
         }
             if ( t == 1000 || hash->node[key].state == 1 ) {
                 return false;
-            } 
+            }
+        PrintaInfos( hash->node[key].infos );
     }
     return true;
 }
 
-Hash* InserePalavra( Hash *hash ) {
+Hash* InserePalavra ( Hash *hash, char *word, char *class, int polarity, char classification ) {
 
-    char word[256];
-    char class[256];
-    int polarity = -2;
-
-    printf("\nDigite as informações que quer inseirir\nPalavra: ");
-    scanf("%s", word);
-
-    if ( BuscaNaHash( hash, word ) ){
-        printf("\nPalavra já está na Hash!\n");
-        return hash;
-    }
-
-    printf("Classe gramatical: ");
-    scanf("%s", class);
-    while ( polarity > 1 || polarity < -1 ) {
-        printf("Polaridade ( -1 / 0 / 1 ): ");
-        scanf("%d", &polarity);
-    }
-    
     int key = (PRH(word));
 
-    if ( hash->node[key].state == -1 || hash->node[key].state == 1 ) {
+    if ( hash->node[key].state != 0 ) {
 
         strcpy( hash->node[key].infos.word, word );
         strcpy( hash->node[key].infos.class, class );
         hash->node[key].infos.polarity = polarity;
-        hash->node[key].infos.classification = 'M';
+        hash->node[key].infos.classification = classification;
         hash->node[key].state = 0;
 
-    } else if (hash->node[Hash2(word)].state == -1 || hash->node[Hash2(word)].state == 1 ) {
+    } else if (hash->node[Hash2(word)].state != 0 ) {
 
         key = Hash2(word);
 
         strcpy( hash->node[key].infos.word, word );
         strcpy( hash->node[key].infos.class, class );
         hash->node[key].infos.polarity = polarity;
-        hash->node[key].infos.classification = 'M';
+        hash->node[key].infos.classification = classification;
         hash->node[key].state = 0;
 
     } else {
 
         int t = 1;
-        int key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+        int key = Hash3(word, t);
 
-        while( hash->node[key].state != -1 || hash->node[key].state != 1 ) {
-            key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+        while( !(hash->node[key].state == 0) ) {
+            key = Hash3(word, t);
             t++;
         }
 
         strcpy( hash->node[key].infos.word, word );
         strcpy( hash->node[key].infos.class, class );
         hash->node[key].infos.polarity = polarity;
-        hash->node[key].infos.classification = 'M';
+        hash->node[key].infos.classification = classification;
         hash->node[key].state = 0;
 
-    } 
-    printf("\nPalavra adicionada com suscesso!\n");
-    hash->loadFactor--;
+    }
+    hash->freeSlots--;
+
+    if ( hash->freeSlots < (HASH_SIZE * reHashFactor * 0.30) ) {
+        hash = ReHashing( hash );
+    }
     return hash;
 }
 
@@ -304,38 +325,60 @@ Hash* RemovePalavra( Hash *hash ) {
     printf("Digite a palavra que quer remover: ");
     scanf("%s", word);
 
-    if ( strcmp( word, hash->node[abs(PRH(word))].infos.word ) == 0 && hash->node[abs(PRH(word))].state == 0) {
+    int key = PRH(word);
 
-        hash->node[abs(PRH(word))].state = 1;
-        hash->loadFactor++;
+    if ( strcmp( word, hash->node[key].infos.word ) == 0 && hash->node[key].state == 0) {
+
+        hash->node[key].state = 1;
+        hash->freeSlots++;
         printf("\nPalavra removida com suscesso!\n");
         return hash;
 
-    } else if ( strcmp( word, hash->node[abs(Hash2(word))].infos.word ) == 0 && hash->node[abs(Hash2(word))].state == 0) {
+    } else if ( strcmp( word, hash->node[Hash2(word)].infos.word ) == 0 && hash->node[Hash2(word)].state == 0) {
 
-        hash->node[abs(Hash2(word))].state = 1;
-        hash->loadFactor++;
+        hash->node[Hash2(word)].state = 1;
+        hash->freeSlots++;
         printf("\nPalavra removida com suscesso!\n");
         return hash;
 
     } else {
 
         int t = 1;
-        int key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+        int key = Hash3(word, t);
 
         while( strcmp( hash->node[key].infos.word, word) != 0 && t < 1000 ) {            
-            key = abs( ( PRH(word) + Hash2(word) * t ) % HASH_SIZE );
+            key = Hash3(word, t);
             t++;
         }
             if ( t == 1000 || hash->node[key].state == 1 ) {
                 return hash;
             } else {
                 hash->node[key].state = 1;
-                hash->loadFactor++;
+                hash->freeSlots++;
                 printf("\nPalavra removida com suscesso!\n");
             }
     }
 
     return hash;
 
+}
+
+Hash* ReHashing( Hash *hash ) {
+
+    reHashFactor++;
+
+    Hash *newHash = InicializaHash();
+
+    printf("\nAumentando o tamanho da Hash...\n");
+
+    for ( int i = 0; i < HASH_SIZE * ( reHashFactor - 1); i++ ){
+
+        if ( hash->node[i].state == 0 ) {
+            newHash = InserePalavra( newHash, hash->node[i].infos.word, hash->node[i].infos.class, hash->node[i].infos.polarity, hash->node[i].infos.classification );
+        }
+    }
+    free(hash->node);
+    free(hash);
+
+    return newHash;
 }
