@@ -46,7 +46,6 @@ bool BuscaNaHash( Hash *hash, char *word );
 Hash* InserePalavra( Hash *hash, char *word, char *class, int polarity, char classification );
 Hash* RemovePalavra( Hash *hash );
 Hash* ReHashing( Hash *hash );
-void removerAcentos(char *str);
 
 int main (void) {
 
@@ -152,15 +151,11 @@ Hash* InsereDeArquivo ( Hash *hash ) {
 
 int PRH ( char *word ) { //Polynomial Rolling Hash
 
-    char temp[256];
-    strcpy(temp, word);
-    removerAcentos(temp);
-
     long long key = 0;
 
-    for ( int i = 0; temp[i] != '\0' ; i++ ) {
+    for ( int i = 0; word[i] != '\0' ; i++ ) {
 
-        key += (temp[i] * (long long)pow( 53, i ));
+        key += (word[i] * (long long)pow( 53, i ));
 
     }
     
@@ -170,15 +165,11 @@ int PRH ( char *word ) { //Polynomial Rolling Hash
 
 int Hash2 ( char *word ) {
 
-    char temp[256];
-    strcpy(temp, word);
-    removerAcentos(temp);
-
     long long key = 0;
 
-    for ( int i = 0; temp[i] != '\0'; i++ ) {
+    for ( int i = 0; word[i] != '\0'; i++ ) {
 
-        key += temp[i];
+        key += word[i];
 
     }
 
@@ -393,51 +384,3 @@ Hash* ReHashing( Hash *hash ) {
     return newHash;
 }
 
-void removerAcentos(char *str) { // Tive que procurar como faz isso pra não dar problema na impressão
-    for (int i = 0; str[i] != '\0'; i++) {
-        unsigned char c1 = (unsigned char)str[i];
-        unsigned char c2 = (unsigned char)str[i+1];
-
-        // Acentos estão em UTF-8, começam com 0xC3
-        if (c1 == 0xC3) {
-            switch (c2) {
-                // A/a com acento
-                case 0x81: case 0x80: case 0x82: case 0x83: case 0x84: // Á À Â Ã Ä
-                    str[i] = 'A'; break;
-                case 0xA1: case 0xA0: case 0xA2: case 0xA3: case 0xA4: // á à â ã ä
-                    str[i] = 'a'; break;
-
-                // E/e com acento
-                case 0x89: case 0x88: case 0x8A: case 0x8B: // É È Ê Ë
-                    str[i] = 'E'; break;
-                case 0xA9: case 0xA8: case 0xAA: case 0xAB: // é è ê ë
-                    str[i] = 'e'; break;
-
-                // I/i com acento
-                case 0x8D: case 0x8C: case 0x8E: case 0x8F: // Í Ì Î Ï
-                    str[i] = 'I'; break;
-                case 0xAD: case 0xAC: case 0xAE: case 0xAF: // í ì î ï
-                    str[i] = 'i'; break;
-
-                // O/o com acento
-                case 0x93: case 0x92: case 0x94: case 0x95: case 0x96: // Ó Ò Ô Õ Ö
-                    str[i] = 'O'; break;
-                case 0xB3: case 0xB2: case 0xB4: case 0xB5: case 0xB6: // ó ò ô õ ö
-                    str[i] = 'o'; break;
-
-                // U/u com acento
-                case 0x9A: case 0x99: case 0x9B: case 0x9C: // Ú Ù Û Ü
-                    str[i] = 'U'; break;
-                case 0xBA: case 0xB9: case 0xBB: case 0xBC: // ú ù û ü
-                    str[i] = 'u'; break;
-
-                // Ç/ç
-                case 0x87: str[i] = 'C'; break; // Ç
-                case 0xA7: str[i] = 'c'; break; // ç
-            }
-
-            // remove o segundo byte do caractere UTF-8
-            memmove(&str[i+1], &str[i+2], strlen(&str[i+2])+1);
-        }
-    }
-}
