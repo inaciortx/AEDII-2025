@@ -52,22 +52,30 @@ typedef struct BTPage {
 
 } BTPage;
 
+//Funções de interface
 void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz );
+void PrintaDadosAluno( long int index );
+void PrintaDadosDisciplina( long int index);
+
+//Funções principais da Btree
+BTPage* Insere( BTPage *raiz, Chave key );
 BTPage* CriaNo( void ); 
-
-
+int Busca( BTPage*no, char *chave );
 
 //Funções aux da Btree
 void DivideNoFilho( BTPage *pai, int indiceFilho );
-BTPage* Insere( BTPage *raiz, Chave key );
 void InsereNaoCheio( BTPage *no, Chave key );
 
-
-//Funções de arquivo
-void InsereDeArquivoAlunos( BTPage **raiz );
-void InsereDeArquivoDisciplina( BTPage **raiz );
+//Funções de arquivo ( DADOS )
+//void InsereDeArquivoAluno( BTPage **raiz );
+//void InsereDeArquivoDisciplina( BTPage **raiz );
 void AtualizaArquivoDeDadosAluno( Aluno aluno );
 void AtualizaArquivoDeDadosDisciplina( Disciplina disciplina );
+
+// Funções de arquivos ( INDICE )
+void SalvaBT( BTPage *no, FILE *fp );
+void CarregaBTAlunos( BTPage **raiz, FILE *fp );
+void CarregaBTDisciplinas( BTPage ** raiz, FILE *fp );
 
 
 int main ( void ) {
@@ -81,10 +89,25 @@ int main ( void ) {
     alunoRaiz = CriaNo();
     disciplinaRaiz = CriaNo();
 
-    InsereDeArquivoAlunos( &alunoRaiz );
-    InsereDeArquivoDisciplina( &disciplinaRaiz );
+    FILE *index_alunos, *index_disciplinas;
+    index_alunos = fopen( "indexAlunos.idx", "rb" );
+    index_disciplinas = fopen( "indexDisciplinas.idx", "rb" );
+    
+    CarregaBTAlunos( &alunoRaiz, index_alunos );
+    fclose( index_alunos );
+
+    CarregaBTDisciplinas( &disciplinaRaiz, index_disciplinas );
+    fclose( index_disciplinas );
 
     Menu( &alunoRaiz, &disciplinaRaiz );
+
+    index_alunos = fopen( "indexAlunos.idx", "wb" );
+    SalvaBT( alunoRaiz, index_alunos );
+    fclose(index_alunos);
+
+    index_disciplinas = fopen( "indexDisciplinas.idx", "wb" );
+    SalvaBT( disciplinaRaiz, index_disciplinas );
+    fclose(index_disciplinas);
 
 
 }
@@ -128,7 +151,17 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     break;
 
                 case 2:
-                    printf("Função nao implementada\n");
+                    printf("Digite a matrícula do aluno:\n");
+                    scanf("%s", aluno.matricula );
+
+                    long int index = Busca( *AlunoRaiz, aluno.matricula);
+
+                    if ( index != -1 ) {
+                        PrintaDadosAluno( index );
+                    } else {
+                        printf("Aluno não encontrado na base de dados\n");
+                    }
+
                     break;
                 
                 case 3:
@@ -167,7 +200,16 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     *DisciplinaRaiz = Insere( *DisciplinaRaiz, key );
                     break;
                 case 2:
-                    printf("Função nao implementada\n");
+                    printf("Digite o código da disciplina:\n");
+                    scanf("%s", disciplina.codigo_disciplina );
+
+                    long int index = Busca( *DisciplinaRaiz, disciplina.codigo_disciplina);
+
+                    if ( index != -1 ) {
+                        PrintaDadosDisciplina( index );
+                    } else {
+                        printf("Disciplina não encontrada na base de dados\n");
+                    }
                     break;
                 case 3:
                     printf("Função nao implementada\n");
@@ -177,6 +219,7 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     break;
                 case 0:
                     printf("Voltando...\n");
+                    break;
                 default:
                     printf("Operação inválida\n");
                     break;
@@ -304,7 +347,7 @@ BTPage* Insere( BTPage *raiz, Chave key ) {
 
 }
 
-void InsereDeArquivoAlunos( BTPage **raiz ) {
+/* void InsereDeArquivoAlunos( BTPage **raiz ) {
 
     FILE *fp;
     FILE *arq_dados;
@@ -346,8 +389,9 @@ void InsereDeArquivoAlunos( BTPage **raiz ) {
     fclose( arq_dados );
 
 }
+*/
 
-void InsereDeArquivoDisciplina( BTPage **raiz ) {
+/* void InsereDeArquivoDisciplina( BTPage **raiz ) {
 
     FILE *fp;
     FILE *arq_dados;
@@ -387,36 +431,159 @@ void InsereDeArquivoDisciplina( BTPage **raiz ) {
 
     fclose(fp);
     fclose( arq_dados );
-}
+}*/
 
 void AtualizaArquivoDeDadosAluno( Aluno aluno ) {
 
-FILE *fp;
+    FILE *fp;
 
-fp = fopen( "alunos_dados.dat", "ab" );
-    if ( fp == NULL ) {
-        printf(" erro ao abrir alunos_dados.dat ");
-        exit(1);
-    }
+    fp = fopen( "alunos_dados.dat", "ab" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir alunos_dados.dat ");
+            exit(1);
+        }
 
-    fwrite( &aluno, sizeof(Aluno), 1, fp );
+        fwrite( &aluno, sizeof(Aluno), 1, fp );
 
-    fclose( fp );
+        fclose( fp );
 
 }
 
 void AtualizaArquivoDeDadosDisciplina( Disciplina disciplina ) {
 
-FILE *fp;
+    FILE *fp;
 
-fp = fopen( "disciplinas_dados.dat", "ab" );
-    if ( fp == NULL ) {
-        printf(" erro ao abrir disciplinas_dados.txt ");
-        exit(1);
+    fp = fopen( "disciplinas_dados.dat", "ab" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir disciplinas_dados.dat ");
+            exit(1);
+        }
+
+        fwrite( &disciplina, sizeof(Disciplina), 1, fp );
+
+        fclose( fp );
+
+}
+
+int Busca( BTPage *no, char *chave ) {
+
+    int indexFilho = 0;
+
+    while( indexFilho < no->totalChaves && strcmp( chave, no->chaves[indexFilho].chave) > 0 ){
+        indexFilho++;
     }
 
-    fwrite( &disciplina, sizeof(Disciplina), 1, fp );
+    if ( indexFilho < no->totalChaves && strcmp( chave, no->chaves[indexFilho].chave) == 0 ) {
+        return no->chaves[indexFilho].index;
+    }
+    
+    if( no->folha ) {
+        return -1;
+    }
 
-    fclose( fp );
+    return Busca( no->filho[indexFilho], chave );
+    
+}
 
+void PrintaDadosAluno( long int index ) {
+
+      FILE *fp;
+      Aluno aluno;
+
+    fp = fopen( "alunos_dados.dat", "rb" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir alunos_dados.dat ");
+            exit(1);
+        }
+
+    long int offset = index * sizeof(Aluno);
+
+    fseek(fp, offset, SEEK_SET);
+    fread(&aluno, sizeof(Aluno), 1, fp);
+
+    if (aluno.valido) {
+            printf("\n=== Dados do Aluno ===\n");
+            printf("Matrícula: %s\n", aluno.matricula);
+            printf("Nome: %s\n", aluno.nome_do_aluno);
+            printf("=======================\n");
+        } else {
+            printf("Aluno com matrícula %s foi encontrado, mas está desligado.\n", aluno.matricula);
+        }
+
+    fclose(fp);
+}
+
+void PrintaDadosDisciplina( long int index ) {
+
+      FILE *fp;
+      Disciplina disciplina;
+
+    fp = fopen( "disciplinas_dados.dat", "rb" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir disciplinas_dados.dat ");
+            exit(1);
+        }
+
+    long int offset = index * sizeof(Disciplina);
+
+    fseek(fp, offset, SEEK_SET);
+    fread(&disciplina, sizeof(Disciplina), 1, fp);
+
+    if (disciplina.valido) {
+            printf("\n======= Dados da Disciplina ======\n");
+            printf("Código da disciplina: %s\n", disciplina.codigo_disciplina);
+            printf("Nome da disciplina: %s\n", disciplina.nome_da_disciplina);
+            printf("====================================\n");
+        } else {
+            printf("A disciplina de código %s não está mais ativa\n", disciplina.codigo_disciplina);
+        }
+
+    fclose(fp);
+}
+
+void SalvaBT( BTPage *no, FILE *fp ) {
+
+    if( no == NULL ) {
+        return;
+    }
+
+    for ( int i = 0; i < no->totalChaves; i++ ) {
+        fwrite( &no->chaves[i], sizeof(Chave), 1, fp );
+    }
+
+    if( !no->folha ) {
+        for( int i = 0; i <= no->totalChaves; i++ ){
+            SalvaBT( no->filho[i], fp );
+        }
+    }
+}
+
+void CarregaBTAlunos( BTPage **raiz, FILE *fp ) {
+
+    Chave key;
+    indiceAluno = 0;
+
+    while( fread( &key, sizeof(Chave), 1, fp ) == 1 ) {
+        
+        *raiz = Insere( *raiz, key );
+
+        if( key.index >= indiceAluno ) {
+            indiceAluno = key.index+1;
+        }
+    }
+}
+
+void CarregaBTDisciplinas( BTPage ** raiz, FILE *fp ) {
+
+    Chave key;
+    indiceDisciplina = 0;
+
+    while( fread( &key, sizeof(Chave), 1, fp ) == 1 ) {
+        
+        *raiz = Insere( *raiz, key );
+
+        if( key.index >= indiceDisciplina ) {
+            indiceDisciplina = key.index+1;
+        }
+    }
 }
