@@ -67,8 +67,8 @@ void DivideNoFilho( BTPage *pai, int indiceFilho );
 void InsereNaoCheio( BTPage *no, Chave key );
 
 //Funções de arquivo ( DADOS )
-//void InsereDeArquivoAluno( BTPage **raiz );
-//void InsereDeArquivoDisciplina( BTPage **raiz );
+void InsereDeArquivoAluno( BTPage **raiz );
+void InsereDeArquivoDisciplina( BTPage **raiz );
 void AtualizaArquivoDeDadosAluno( Aluno aluno );
 void AtualizaArquivoDeDadosDisciplina( Disciplina disciplina );
 
@@ -90,14 +90,22 @@ int main ( void ) {
     disciplinaRaiz = CriaNo();
 
     FILE *index_alunos, *index_disciplinas;
-    index_alunos = fopen( "indexAlunos.idx", "rb" );
-    index_disciplinas = fopen( "indexDisciplinas.idx", "rb" );
-    
-    CarregaBTAlunos( &alunoRaiz, index_alunos );
-    fclose( index_alunos );
 
-    CarregaBTDisciplinas( &disciplinaRaiz, index_disciplinas );
-    fclose( index_disciplinas );
+    index_alunos = fopen( "indexAlunos.idx", "rb" );
+    if ( index_alunos == NULL ) {
+        InsereDeArquivoAluno( &alunoRaiz );
+    } else {
+        CarregaBTAlunos( &alunoRaiz, index_alunos );
+        fclose( index_alunos );
+    }
+    index_disciplinas = fopen( "indexDisciplinas.idx", "rb" );
+    if ( index_disciplinas == NULL ) {
+        InsereDeArquivoDisciplina( &disciplinaRaiz );
+    } else {
+        CarregaBTDisciplinas( &disciplinaRaiz, index_disciplinas );
+        fclose( index_disciplinas );
+    }
+    
 
     Menu( &alunoRaiz, &disciplinaRaiz );
 
@@ -346,8 +354,7 @@ BTPage* Insere( BTPage *raiz, Chave key ) {
     }
 
 }
-
-/* void InsereDeArquivoAlunos( BTPage **raiz ) {
+void InsereDeArquivoAlunos( BTPage **raiz ) {
 
     FILE *fp;
     FILE *arq_dados;
@@ -389,9 +396,9 @@ BTPage* Insere( BTPage *raiz, Chave key ) {
     fclose( arq_dados );
 
 }
-*/
 
-/* void InsereDeArquivoDisciplina( BTPage **raiz ) {
+
+void InsereDeArquivoDisciplina( BTPage **raiz ) {
 
     FILE *fp;
     FILE *arq_dados;
@@ -431,7 +438,7 @@ BTPage* Insere( BTPage *raiz, Chave key ) {
 
     fclose(fp);
     fclose( arq_dados );
-}*/
+}
 
 void AtualizaArquivoDeDadosAluno( Aluno aluno ) {
 
