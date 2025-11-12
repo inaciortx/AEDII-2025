@@ -1,0 +1,238 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
+#include <ctype.h>
+#include <windows.h>
+#include <locale.h>
+#include "btree.h"
+#include "arquivos.h"
+
+long int indiceAluno;
+long int indiceDisciplina;
+long int indiceMatricula; 
+
+void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz );
+
+int main ( void ) {
+
+    SetConsoleOutputCP(CP_UTF8);
+    setlocale(LC_ALL, "pt_BR.UTF-8");
+
+    BTPage *alunoRaiz;
+    BTPage *disciplinaRaiz;
+    BTPage *matriculaRaiz;
+
+    alunoRaiz = CriaNo();
+    disciplinaRaiz = CriaNo();
+    matriculaRaiz = CriaNo();
+
+    FILE *index_alunos, *index_disciplinas, *index_matriculas;
+
+
+    index_alunos = fopen( "indexAlunos.idx", "rb" );
+    if ( index_alunos == NULL ) {
+        printf(" Carregando dados iniciais de alunos...\n");
+        InsereDeArquivoAluno( &alunoRaiz );
+    } else {
+        CarregaBTAlunos( &alunoRaiz, index_alunos );
+        fclose( index_alunos );
+    }
+    index_disciplinas = fopen( "indexDisciplinas.idx", "rb" );
+    if ( index_disciplinas == NULL ) {
+        printf(" Carregando dados iniciais de disciplinas...\n");
+        InsereDeArquivoDisciplina( &disciplinaRaiz );
+    } else {
+        CarregaBTDisciplinas( &disciplinaRaiz, index_disciplinas );
+        fclose( index_disciplinas );
+    }
+    index_matriculas = fopen( "indexMatricula.idx", "rb" );
+        if ( index_matriculas == NULL ) {
+            printf("Sem matrículas no sistema\n");
+        } else {
+            CarregaBTMatriculas( &matriculaRaiz, index_matriculas );
+            fclose( index_disciplinas );
+        }
+    
+    Menu( &alunoRaiz, &disciplinaRaiz, &matriculaRaiz );
+
+    index_alunos = fopen( "indexAlunos.idx", "wb" );
+    SalvaBT( alunoRaiz, index_alunos );
+    fclose(index_alunos);
+
+    index_disciplinas = fopen( "indexDisciplinas.idx", "wb" );
+    SalvaBT( disciplinaRaiz, index_disciplinas );
+    fclose(index_disciplinas);
+
+    index_matriculas = fopen("indexMatriculas.idx", "wb" );
+    SalvaBT( matriculaRaiz, index_matriculas );
+    fclose( index_matriculas );
+
+
+}
+
+void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz ) {
+
+    int menu = -1;
+    int subMenu = -1;
+    Aluno aluno;
+    Disciplina disciplina;
+    Matricula matricula;
+    Chave key;
+
+
+    do {
+    
+    printf("\n======== SISTEMA ACADÊMICO ========\n");
+    printf("( 1 ) Alunos\n( 2 ) Disciplinas\n( 3 ) Matrículas\n( 0 ) Sair\nOpção: ");
+    scanf("%d", &menu );
+    
+    switch ( menu ) {
+        case 1:
+            do {
+                printf("\n======== SISTEMA ACADÊMICO->Alunos ========\n");
+                printf("( 1 ) Cadastrar Aluno\n( 2 ) Buscar Aluno\n( 3 ) Desligar Aluno\n( 4 ) Atualizar Dados\n( 0 ) Voltar\nOpção: ");
+                scanf("%d", &subMenu );
+            
+            switch ( subMenu ) {
+
+                case 1:
+                    printf("Digite a matrícula do aluno:\n");
+                    scanf("%s", aluno.matricula );
+                    printf("Digite o nome do aluno:\n");
+                    scanf(" %[^\n]", aluno.nome_do_aluno );
+
+                    strcpy(key.chave, aluno.matricula);
+                    key.index = indiceAluno++;
+                    aluno.valido = true;
+
+                    AdicionaAlunoNoArquivo( aluno );
+                    *AlunoRaiz = Insere( *AlunoRaiz, key );
+                    break;
+
+                case 2:
+                    printf("Digite a matrícula do aluno:\n");
+                    scanf("%s", aluno.matricula );
+
+                    long int index = Busca( *AlunoRaiz, aluno.matricula);
+
+                    if ( index != -1 ) {
+                        PrintaDadosAluno( index );
+                    } else {
+                        printf("Aluno não encontrado na base de dados\n");
+                    }
+
+                    break;
+                
+                case 3:
+                    break;
+                case 4: 
+                    printf("Digite a matrícula que quer atualizar:\n");
+                    scanf("%s", aluno.matricula );
+                    AtualizaAlunoDoArquivo( aluno.matricula, *AlunoRaiz );
+                    break;
+                case 0:
+                    printf("Voltando...\n");
+                    break;
+                default:
+                    printf("Operação inválida\n");
+                    break;
+            }
+            } while ( subMenu != 0 );
+            break;
+        case 2: 
+            do {
+                printf("\n======== SISTEMA ACADÊMICO->Disciplinas ========\n");
+                printf("( 1 ) Cadastrar Disciplina\n( 2 ) Buscar Disciplina\n( 3 ) Deletar Disciplina\n( 4 ) Atualizar Dados\n( 0 ) Voltar\nOpção: ");
+                scanf("%d", &subMenu );
+             switch ( subMenu ) {
+
+                case 1:
+                    printf("Digite o código da disciplina:\n");
+                    scanf("%s", disciplina.codigo_disciplina );
+                    printf("Digite o nome da disciplina:\n");
+                    scanf(" %[^\n]", disciplina.nome_da_disciplina );
+
+                    strcpy(key.chave, disciplina.codigo_disciplina);
+                    key.index = indiceDisciplina++;
+                    disciplina.valido = true;
+
+                    AdicionaDisciplinaNoArquivo( disciplina );
+                    *DisciplinaRaiz = Insere( *DisciplinaRaiz, key );
+                    break;
+                case 2:
+                    printf("Digite o código da disciplina:\n");
+                    scanf("%s", disciplina.codigo_disciplina );
+
+                    long int index = Busca( *DisciplinaRaiz, disciplina.codigo_disciplina);
+
+                    if ( index != -1 ) {
+                        PrintaDadosDisciplina( index );
+                    } else {
+                        printf("Disciplina não encontrada na base de dados\n");
+                    }
+                    break;
+                case 3:
+                    printf("Função nao implementada\n");
+                    break;
+                case 4: 
+                    printf("Digite o código da disciplina que quer atualizar:\n");
+                    scanf("%s", disciplina.codigo_disciplina );
+                    AtualizaDisciplinaDoArquivo( disciplina.codigo_disciplina, *DisciplinaRaiz );
+                    break;
+                case 0:
+                    printf("Voltando...\n");
+                    break;
+                default:
+                    printf("Operação inválida\n");
+                    break;
+            }
+            } while ( subMenu != 0 );
+            break;
+        case 3:
+            do {
+                printf("( 1 ) Matricular Aluno\n( 2 ) Buscar \n( 3 ) Desmatricular aluno( 4 ) Atualizar Nota\n( 0 ) Voltar\nOpção: ");
+                scanf("%d", &subMenu );
+
+                switch ( subMenu ) {
+
+                    case 1:
+                        printf("Digite o código da disciplina:\n");
+                        scanf("%s", matricula.codigo_disciplina );
+                        printf("Digite a matricula do aluno:\n");
+                        scanf(" %[^\n]", matricula.matricula_aluno);
+                        matricula.id_matricula = ++indiceMatricula;
+                        matricula.media_final = 0.0;
+                        matricula.valido = true;
+
+                        key.index = indiceMatricula;
+                        sprintf(key.chave, "%ld", indiceMatricula );
+                        
+                        AdicionaMatriculaNoArquivo( matricula );
+                        *MatriculaRaiz = Insere( *MatriculaRaiz, key );
+                        break;
+                    case 2:
+                        printf("Função nao implementada\n");
+                        break;
+                    case 3:
+                        printf("Função nao implementada\n");
+                        break;
+                    case 4:
+                        printf("Função nao implementada\n");
+                        break;
+                    
+                }
+            } while ( subMenu != 0 );
+            break;
+        case 0:
+            printf("Saindo...\n");
+            break;
+        default:
+            printf("OPÇÃO INVÁLIDA\n");
+            break;
+    }
+    
+    } while ( menu != 0);
+}
+
+
