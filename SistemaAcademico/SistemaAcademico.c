@@ -69,8 +69,10 @@ void InsereNaoCheio( BTPage *no, Chave key );
 //Funções de arquivo ( DADOS )
 void InsereDeArquivoAluno( BTPage **raiz );
 void InsereDeArquivoDisciplina( BTPage **raiz );
-void AtualizaArquivoDeDadosAluno( Aluno aluno );
-void AtualizaArquivoDeDadosDisciplina( Disciplina disciplina );
+void AdicionaAlunoNoArquivo( Aluno aluno );
+void AdicionaDisciplinaNoArquivo( Disciplina disciplina );
+void AtualizaAlunoDoArquivo( char *chave, BTPage *raiz );
+void AtualizaDisciplinaDoArquivo( char *chave, BTPage *raiz ); 
 
 // Funções de arquivos ( INDICE )
 void SalvaBT( BTPage *no, FILE *fp );
@@ -93,6 +95,7 @@ int main ( void ) {
 
     index_alunos = fopen( "indexAlunos.idx", "rb" );
     if ( index_alunos == NULL ) {
+        printf(" Carregando dados iniciais de alunos...\n");
         InsereDeArquivoAluno( &alunoRaiz );
     } else {
         CarregaBTAlunos( &alunoRaiz, index_alunos );
@@ -100,6 +103,7 @@ int main ( void ) {
     }
     index_disciplinas = fopen( "indexDisciplinas.idx", "rb" );
     if ( index_disciplinas == NULL ) {
+        printf(" Carregando dados iniciais de disciplinas...\n");
         InsereDeArquivoDisciplina( &disciplinaRaiz );
     } else {
         CarregaBTDisciplinas( &disciplinaRaiz, index_disciplinas );
@@ -154,7 +158,7 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     key.index = indiceAluno++;
                     aluno.valido = true;
 
-                    AtualizaArquivoDeDadosAluno( aluno );
+                    AdicionaAlunoNoArquivo( aluno );
                     *AlunoRaiz = Insere( *AlunoRaiz, key );
                     break;
 
@@ -173,10 +177,11 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     break;
                 
                 case 3:
-                    printf("Função nao implementada\n");
                     break;
                 case 4: 
-                    printf("Função nao implementada\n");
+                    printf("Digite a matrícula que quer atualizar:\n");
+                    scanf("%s", aluno.matricula );
+                    AtualizaAlunoDoArquivo( aluno.matricula, *AlunoRaiz );
                     break;
                 case 0:
                     printf("Voltando...\n");
@@ -204,7 +209,7 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     key.index = indiceDisciplina++;
                     disciplina.valido = true;
 
-                    AtualizaArquivoDeDadosDisciplina( disciplina );
+                    AdicionaDisciplinaNoArquivo( disciplina );
                     *DisciplinaRaiz = Insere( *DisciplinaRaiz, key );
                     break;
                 case 2:
@@ -223,7 +228,9 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz ) {
                     printf("Função nao implementada\n");
                     break;
                 case 4: 
-                    printf("Função nao implementada\n");
+                    printf("Digite o código da disciplina que quer atualizar:\n");
+                    scanf("%s", disciplina.codigo_disciplina );
+                    AtualizaAlunoDoArquivo( disciplina.codigo_disciplina, *DisciplinaRaiz );
                     break;
                 case 0:
                     printf("Voltando...\n");
@@ -354,12 +361,13 @@ BTPage* Insere( BTPage *raiz, Chave key ) {
     }
 
 }
-void InsereDeArquivoAlunos( BTPage **raiz ) {
+
+void InsereDeArquivoAluno( BTPage **raiz ) {
 
     FILE *fp;
     FILE *arq_dados;
 
-    fp = fopen( "aluno.txt", "r" );
+    fp = fopen( "alunos.txt", "r" );
     if ( fp == NULL ) {
         printf(" erro ao abrir alunos.txt ");
         exit(1);
@@ -396,7 +404,6 @@ void InsereDeArquivoAlunos( BTPage **raiz ) {
     fclose( arq_dados );
 
 }
-
 
 void InsereDeArquivoDisciplina( BTPage **raiz ) {
 
@@ -440,7 +447,7 @@ void InsereDeArquivoDisciplina( BTPage **raiz ) {
     fclose( arq_dados );
 }
 
-void AtualizaArquivoDeDadosAluno( Aluno aluno ) {
+void AdicionaAlunoNoArquivo( Aluno aluno ) {
 
     FILE *fp;
 
@@ -456,7 +463,7 @@ void AtualizaArquivoDeDadosAluno( Aluno aluno ) {
 
 }
 
-void AtualizaArquivoDeDadosDisciplina( Disciplina disciplina ) {
+void AdicionaDisciplinaNoArquivo( Disciplina disciplina ) {
 
     FILE *fp;
 
@@ -594,3 +601,101 @@ void CarregaBTDisciplinas( BTPage ** raiz, FILE *fp ) {
         }
     }
 }
+
+void AtualizaAlunoDoArquivo( char *chave, BTPage *raiz ){  
+    
+    long int index = Busca( raiz, chave );
+    if ( index == -1 ) {
+        printf("Aluno não encontrado no banco de dados\n");
+        return;
+    }
+
+    printf(" * DADOS ATUAIS DO ALUNO *");
+    PrintaDadosAluno( index );
+
+    long int offset = index * sizeof(Aluno);
+    Aluno aluno;
+    int menu = -1;
+
+    FILE *fp;
+    fp = fopen( "alunos_dados.dat", "r+b" ); 
+    if ( fp == NULL ) {
+        printf(" erro ao abrir alunos_dados.dat para atualizar");
+        exit(1);
+    }
+    
+    fseek(fp, offset, SEEK_SET);
+    fread( &aluno, sizeof(Aluno), 1, fp );
+
+
+    while ( menu != 0 ) {
+        printf("\nATUALIZAR DADOS:\n(1) Nome\n(0) Confirmar mudanças\n");
+        scanf("%d", &menu );
+
+        switch ( menu ) {
+
+            case 1:
+                printf("Novo nome:");
+                scanf(" %[^\n]", aluno.nome_do_aluno );
+                break;
+            case 0:
+                printf("Registro atualizado com sucesso!\n");
+                break;
+        }
+    }
+
+    fseek(fp, offset, SEEK_SET);
+    fwrite( &aluno, sizeof(Aluno), 1, fp );
+
+    fclose( fp );
+
+}
+
+void AtualizaDisciplinaDoArquivo( char *chave, BTPage *raiz ) {
+    
+    long int index = Busca( raiz, chave );
+    if ( index == -1 ) {
+        printf("Disciplina não encontrada no banco de dados\n");
+        return;
+    }
+
+    printf(" * DADOS ATUAIS DA DISCIPLINA *");
+    PrintaDadosAluno( index );
+
+    long int offset = index * sizeof(Disciplina);
+    Disciplina disciplina;
+    int menu = -1;
+
+    FILE *fp;
+    fp = fopen( "disciplinas_dados.dat", "r+b" ); 
+    if ( fp == NULL ) {
+        printf(" erro ao abrir disciplinas_dados.dat para atualizar");
+        exit(1);
+    }
+    
+    fseek(fp, offset, SEEK_SET);
+    fread( &disciplina, sizeof(Disciplina), 1, fp );
+
+
+    while ( menu != 0 ) {
+        printf("\nATUALIZAR DADOS:\n(1) Nome\n(0) Confirmar mudanças\n");
+        scanf("%d", &menu );
+
+        switch ( menu ) {
+
+            case 1:
+                printf("Novo nome:");
+                scanf(" %[^\n]", disciplina.codigo_disciplina );
+                break;
+            case 0:
+                printf("Registro atualizado com sucesso!\n");
+                break;
+        }
+    }
+
+    fseek(fp, offset, SEEK_SET);
+    fwrite( &disciplina, sizeof(Disciplina), 1, fp );
+
+    fclose( fp );
+}
+

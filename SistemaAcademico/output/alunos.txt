@@ -10,4 +10,13 @@
 2024006,João Pereira
 2022001,Laura Nogueira
 2022002,Marcos Azevedo
-24102801, Inácio Teixeira
+24102801,Inácio Teixeira
+24102802,Lucas Mendes
+24102803,Mariana Andrade
+24102804,Pedro Henrique
+24102805,Sofia Ribeiro
+24102806,Rafael Santos
+24102807,Beatriz Almeida
+24102808,Thiago Correia
+24102809,Larissa Farias
+24102810,Vinicius Barbosa
