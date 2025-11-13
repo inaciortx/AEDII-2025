@@ -8,9 +8,9 @@
 #include "btree.h"
 #include "arquivos.h"
 
-long int indiceAluno;
-long int indiceDisciplina;
-long int indiceMatricula; 
+long int indiceAluno = 0;
+long int indiceDisciplina = 0;
+long int indiceMatricula = 0; 
 
 void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz );
 
@@ -46,12 +46,12 @@ int main ( void ) {
         CarregaBTDisciplinas( &disciplinaRaiz, index_disciplinas );
         fclose( index_disciplinas );
     }
-    index_matriculas = fopen( "indexMatricula.idx", "rb" );
+    index_matriculas = fopen( "indexMatriculas.idx", "rb" );
         if ( index_matriculas == NULL ) {
             printf("Sem matrículas no sistema\n");
         } else {
             CarregaBTMatriculas( &matriculaRaiz, index_matriculas );
-            fclose( index_disciplinas );
+            fclose( index_matriculas );
         }
     
     Menu( &alunoRaiz, &disciplinaRaiz, &matriculaRaiz );
@@ -99,6 +99,14 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                 case 1:
                     printf("Digite a matrícula do aluno:\n");
                     scanf("%s", aluno.matricula );
+
+                    int teste = Busca( *AlunoRaiz, aluno.matricula );
+                    if ( teste != -1 ) {
+                        printf("Já existe um aluno com essa matrícula no sistema!");
+                        PrintaDadosAluno( teste );
+                        break;
+                    }
+                    
                     printf("Digite o nome do aluno:\n");
                     scanf(" %[^\n]", aluno.nome_do_aluno );
 
@@ -150,6 +158,16 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                 case 1:
                     printf("Digite o código da disciplina:\n");
                     scanf("%s", disciplina.codigo_disciplina );
+
+                    int teste = Busca( *DisciplinaRaiz, disciplina.codigo_disciplina );
+                    if ( teste != -1 ) {
+                        printf("Já existe uma disciplina com esse código no sistema!");
+                        PrintaDadosDisciplina( teste );
+                        break;
+                    }
+
+                    printf("Digite o nome do aluno:\n");
+                    scanf(" %[^\n]", aluno.nome_do_aluno );
                     printf("Digite o nome da disciplina:\n");
                     scanf(" %[^\n]", disciplina.nome_da_disciplina );
 
@@ -191,34 +209,61 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
             break;
         case 3:
             do {
-                printf("( 1 ) Matricular Aluno\n( 2 ) Buscar \n( 3 ) Desmatricular aluno( 4 ) Atualizar Nota\n( 0 ) Voltar\nOpção: ");
+                printf("\n======== SISTEMA ACADÊMICO->Matriculas ========\n");
+                printf("( 1 ) Matricular Aluno\n( 2 ) Buscar \n( 3 ) Desmatricular aluno\n( 4 ) Atualizar Nota\n( 0 ) Voltar\nOpção: ");
                 scanf("%d", &subMenu );
 
                 switch ( subMenu ) {
 
                     case 1:
-                        printf("Digite o código da disciplina:\n");
+                        printf("Digite o código da disciplina: ");
                         scanf("%s", matricula.codigo_disciplina );
-                        printf("Digite a matricula do aluno:\n");
+                        if ( Busca( *DisciplinaRaiz, matricula.codigo_disciplina) == -1 ) {
+                            printf("\n** Disciplina não encontrada no sistema! **\n");
+                            break;
+                        }
+                        printf("Digite a matricula do aluno: ");
                         scanf(" %[^\n]", matricula.matricula_aluno);
-                        matricula.id_matricula = ++indiceMatricula;
+                        if ( Busca( *AlunoRaiz, matricula.matricula_aluno ) == -1 ) {
+                            printf("\n** Aluno não encontrado no sistema! **\n");
+                            break;
+                        }
+                        matricula.id_matricula = indiceMatricula;
                         matricula.media_final = 0.0;
                         matricula.valido = true;
 
                         key.index = indiceMatricula;
                         sprintf(key.chave, "%ld", indiceMatricula );
+                        indiceMatricula++;
                         
                         AdicionaMatriculaNoArquivo( matricula );
                         *MatriculaRaiz = Insere( *MatriculaRaiz, key );
+                        printf("\nAluno matriculado com sucesso!\n");
                         break;
                     case 2:
-                        printf("Função nao implementada\n");
+                        printf("(1) Buscar disciplinas de aluno\n(2) Buscar alunos de disciplina\nOpção: ");
+                        scanf("%d", &subMenu );
+                        switch( subMenu ) {
+                            case 1:
+                                printf("Digite a matricula do aluno: ");
+                                scanf("%s", matricula.matricula_aluno);
+                                BuscaMatriculas( *AlunoRaiz, *DisciplinaRaiz, matricula.matricula_aluno, 0 );
+                                break;
+
+                            case 2: 
+                                printf("Digite o código da disciplina: ");
+                                scanf("%s", matricula.codigo_disciplina );
+                                BuscaMatriculas(*AlunoRaiz, *DisciplinaRaiz, matricula.codigo_disciplina, 1 );
+                                break;
+                        }
                         break;
                     case 3:
                         printf("Função nao implementada\n");
                         break;
                     case 4:
-                        printf("Função nao implementada\n");
+                        printf("Digite o ID de matricula: ");
+                        scanf("%s", key.chave );
+                        AtualizaMatriculaDoArquivo( key.chave, *MatriculaRaiz );
                         break;
                     
                 }

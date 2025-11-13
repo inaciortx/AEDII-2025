@@ -22,7 +22,7 @@ typedef struct Disciplina {
 } Disciplina;
 
 typedef struct Matricula { 
-    int id_matricula;
+    long int id_matricula;
     char matricula_aluno[128];
     char codigo_disciplina[128];
     float media_final;
@@ -32,11 +32,14 @@ typedef struct Matricula {
 // Funções de Interface
 void PrintaDadosAluno( long int index );
 void PrintaDadosDisciplina( long int index );
+void PrintaDadosMatricula( long int index );
+void PrintaNomeDisciplina( char *chave, BTPage *raiz );
+void PrintaNomeAluno( char *chave, BTPage *raiz );
 
 // Funções de arquivo de entrada
 void InsereDeArquivoAluno( BTPage **raiz ); 
-void InsereDeArquivoDisciplina( BTPage **raiz ); 
-
+void InsereDeArquivoDisciplina( BTPage **raiz );
+ 
 // Funções de arquivo de dados
 void AdicionaAlunoNoArquivo( Aluno aluno ); 
 void AdicionaDisciplinaNoArquivo( Disciplina disciplina ); 
@@ -45,7 +48,7 @@ void AdicionaMatriculaNoArquivo( Matricula matricula );
 void AtualizaAlunoDoArquivo( char *chave, BTPage *raiz ); 
 void AtualizaDisciplinaDoArquivo( char *chave, BTPage *raiz ); 
 void AtualizaMatriculaDoArquivo( char *chave, BTPage *raiz );
-void BuscaMatriculas( char *chave, int search );
+void BuscaMatriculas( BTPage *alunos, BTPage *disciplinas, char *chave, int search );
 
 // Funções de arquivos de índice
 void SalvaBT( BTPage *no, FILE *fp ); 

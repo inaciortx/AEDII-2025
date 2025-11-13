@@ -2,8 +2,8 @@
 
 void PrintaDadosAluno( long int index ) {
 
-      FILE *fp;
-      Aluno aluno;
+    FILE *fp;
+    Aluno aluno;
 
     fp = fopen( "alunos_dados.dat", "rb" );
         if ( fp == NULL ) {
@@ -51,6 +51,85 @@ void PrintaDadosDisciplina( long int index ) {
             printf("====================================\n");
         } else {
             printf("A disciplina de código %s não está mais ativa\n", disciplina.codigo_disciplina);
+        }
+
+    fclose(fp);
+}
+
+void PrintaDadosMatricula( long int index ) {
+
+      FILE *fp;
+      Matricula matricula;
+
+    fp = fopen( "matriculas_dados.dat", "rb" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir matriculas_dados.dat ");
+            exit(1);
+        }
+
+    long int offset = index * sizeof(Matricula);
+
+    fseek(fp, offset, SEEK_SET);
+    fread(&matricula, sizeof(Matricula), 1, fp);
+
+    if (matricula.valido) {
+            printf("\n=== Dados da Matricula ===\n");
+            printf("Matrícula: %s\n", matricula.matricula_aluno);
+            printf("Código da disciplina: %s\n", matricula.codigo_disciplina);
+            printf("Nota: %.2f\n", matricula.media_final);
+            printf("=======================\n");
+        } else {
+            printf("Matricula não está mais ativa");
+        }
+
+    fclose(fp);
+}
+
+void PrintaNomeAluno( char *chave, BTPage *raiz ) {
+
+    int index = Busca( raiz, chave  );
+    
+    FILE *fp;
+    Aluno aluno;
+
+    fp = fopen( "alunos_dados.dat", "rb" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir alunos_dados.dat ");
+            exit(1);
+        }
+
+    long int offset = index * sizeof(Aluno);
+
+    fseek(fp, offset, SEEK_SET);
+    fread(&aluno, sizeof(Aluno), 1, fp);
+
+    if (aluno.valido) {
+            printf("%s", aluno.nome_do_aluno );
+        }
+
+    fclose(fp);
+}
+
+void PrintaNomeDisciplina( char *chave, BTPage *raiz ) {
+
+    int index = Busca( raiz, chave  );
+    
+    FILE *fp;
+    Disciplina disciplina;
+
+    fp = fopen( "disciplinas_dados.dat", "rb" );
+        if ( fp == NULL ) {
+            printf(" erro ao abrir disciplinas_dados.dat ");
+            exit(1);
+        }
+
+    long int offset = index * sizeof(Disciplina);
+
+    fseek(fp, offset, SEEK_SET);
+    fread(&disciplina, sizeof(Disciplina), 1, fp);
+
+    if (disciplina.valido) {
+            printf("%s", disciplina.nome_da_disciplina );
         }
 
     fclose(fp);
@@ -105,9 +184,9 @@ void InsereDeArquivoDisciplina( BTPage **raiz ) {
     FILE *fp;
     FILE *arq_dados;
 
-    fp = fopen( "matriculas.txt", "r" );
+    fp = fopen( "disciplinas.txt", "r" );
     if ( fp == NULL ) {
-        printf(" erro ao abrir matriculas.txt ");
+        printf(" erro ao abrir disciplinas.txt ");
         exit(1);
     }
     arq_dados = fopen( "disciplinas_dados.dat", "wb" );
@@ -295,42 +374,27 @@ void AtualizaMatriculaDoArquivo( char *chave, BTPage *raiz ) {
         return;
     }
 
-    printf("\n* DADOS ATUAIS DA Matricula *");
-    PrintaDadosDisciplina( index );
+    printf("\n* DADOS ATUAIS DA MATRICULA *");
+    PrintaDadosMatricula( index );
 
-    long int offset = index * sizeof(Disciplina);
-    Disciplina disciplina;
-    int menu = -1;
+    long int offset = index * sizeof(Matricula);
+    Matricula matricula;
 
     FILE *fp;
-    fp = fopen( "disciplinas_dados.dat", "r+b" ); 
+    fp = fopen( "matriculas_dados.dat", "r+b" ); 
     if ( fp == NULL ) {
-        printf(" erro ao abrir disciplinas_dados.dat para atualizar");
+        printf(" erro ao abrir matriculas_dados.dat para atualizar");
         exit(1);
     }
     
     fseek(fp, offset, SEEK_SET);
-    fread( &disciplina, sizeof(Disciplina), 1, fp );
+    fread( &matricula, sizeof(Matricula), 1, fp );
 
-
-    while ( menu != 0 ) {
-        printf("\nATUALIZAR DADOS:\n(1) Nome\n(0) Confirmar mudanças\nOpção: ");
-        scanf("%d", &menu );
-
-        switch ( menu ) {
-
-            case 1:
-                printf("Novo nome: ");
-                scanf(" %[^\n]", disciplina.nome_da_disciplina );
-                break;
-            case 0:
-                printf("Registro atualizado com sucesso!\n");
-                break;
-        }
-    }
+    printf("Média final da discplina: ");
+    scanf("%f", &matricula.media_final);
 
     fseek(fp, offset, SEEK_SET);
-    fwrite( &disciplina, sizeof(Disciplina), 1, fp );
+    fwrite( &matricula, sizeof(Matricula), 1, fp );
 
     fclose( fp );
 }
@@ -382,7 +446,7 @@ void CarregaBTDisciplinas( BTPage ** raiz, FILE *fp ) {
     }
 }
 
-void BuscaMatriculas( char *chave, int search ){
+void BuscaMatriculas( BTPage *alunos, BTPage *disciplinas, char *chave, int search ){
 
     FILE *fp;
     Matricula matricula;
@@ -397,11 +461,13 @@ void BuscaMatriculas( char *chave, int search ){
                 exit(1);
             }
         while ( fread( &matricula, sizeof(Matricula), 1, fp ) == 1 ) {
-            if ( strcmp( matricula.matricula_aluno, chave) == 0 ){
+            if ( strcmp( matricula.matricula_aluno, chave) == 0 && matricula.valido ){
                 if ( infos == 0 ) {
-                    printf("\nMatriculas do Aluno:\n");
+                    printf("\nMatriculas do Aluno: ");
+                    PrintaNomeAluno( matricula.matricula_aluno, alunos );
+                    printf("\n");
                 } 
-                printf("( ID: %d ) - Disciplina: %s - ( Nota: %.2f )\n", matricula.id_matricula, matricula.codigo_disciplina, matricula.media_final );
+                printf("( ID: %ld ) - Disciplina: %s - ( Nota: %.2f )\n", matricula.id_matricula, matricula.codigo_disciplina, matricula.media_final );
                 infos++;
             }
         }
@@ -418,11 +484,13 @@ void BuscaMatriculas( char *chave, int search ){
                 exit(1);
             }
         while ( fread( &matricula, sizeof(Matricula), 1, fp ) == 1 ) {
-            if ( strcmp( matricula.codigo_disciplina, chave) == 0 ){
+            if ( strcmp( matricula.codigo_disciplina, chave) == 0 && matricula.valido ){
                 if ( infos == 0 ) {
-                    printf("\nAlunos da Disciplina:\n");
+                    printf("\nAlunos da Disciplina: ");
+                    PrintaNomeDisciplina( matricula.codigo_disciplina, disciplinas);
+                    printf("\n");
                 } 
-                printf("( ID: %d ) - Matricula: %s - ( Nota: %.2f )\n", matricula.id_matricula, matricula.matricula_aluno, matricula.media_final );
+                printf("( ID: %ld ) - Matricula: %s - ( Nota: %.2f )\n", matricula.id_matricula, matricula.matricula_aluno, matricula.media_final );
                 infos++;
             }
         }

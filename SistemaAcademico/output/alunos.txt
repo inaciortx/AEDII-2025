@@ -20,3 +20,6 @@
 24102808,Thiago Correia
 24102809,Larissa Farias
 24102810,Vinicius Barbosa
+24100357, Hiago Muniz
+24103569, Celina
+24100134, Filipao
