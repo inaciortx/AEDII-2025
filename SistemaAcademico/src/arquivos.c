@@ -519,3 +519,86 @@ void CarregaBTMatriculas( BTPage **raiz, FILE *fp ) {
     }
 
 }
+
+bool VerificaMatricula(char *aluno, char *disciplina ) {
+    FILE *fp;
+    Matricula matricula;
+
+    fp = fopen("matriculas_dados.dat", "rb");
+    if (fp == NULL) {
+        return false; 
+    }
+
+    while (fread(&matricula, sizeof(Matricula), 1, fp) == 1) {
+        if (matricula.valido && 
+            strcmp(matricula.matricula_aluno, aluno) == 0 && 
+            strcmp(matricula.codigo_disciplina, disciplina ) == 0) {
+            
+            fclose(fp);
+            return true; 
+        }
+    }
+
+    fclose(fp);
+    return false; 
+}
+
+void RemoverMatriculasPorAluno(char *matricula_aluno, BTPage **MatriculaRaiz) {
+    FILE *fp = fopen("matriculas_dados.dat", "r+b"); 
+    if (fp == NULL) return; 
+
+    Matricula matricula;
+    char chave_remocao[20];
+    long offset = 0;
+
+    while (fread(&matricula, sizeof(Matricula), 1, fp) == 1) {
+        
+        if (matricula.valido && strcmp(matricula.matricula_aluno, matricula_aluno) == 0) {
+            
+            sprintf(chave_remocao, "%ld", matricula.id_matricula);
+            *MatriculaRaiz = Remove(*MatriculaRaiz, chave_remocao);
+
+            matricula.valido = false;
+            
+            fseek(fp, offset, SEEK_SET); 
+            fwrite(&matricula, sizeof(Matricula), 1, fp);
+            fseek(fp, offset + sizeof(Matricula), SEEK_SET);
+            
+            printf("-> Matrícula (ID: %ld, Disciplina: %s) removida em cascata.\n", matricula.id_matricula, matricula.codigo_disciplina);
+        }
+        
+        offset += sizeof(Matricula);
+    }
+
+    fclose(fp);
+}
+
+void RemoverMatriculasPorDisciplina(char *codigo_disciplina, BTPage **MatriculaRaiz) {
+    FILE *fp = fopen("matriculas_dados.dat", "r+b"); 
+    if (fp == NULL) return; 
+
+    Matricula matricula;
+    char chave_remocao[20];
+    long offset = 0;
+
+    while (fread(&matricula, sizeof(Matricula), 1, fp) == 1) {
+        
+        if (matricula.valido && strcmp(matricula.codigo_disciplina, codigo_disciplina) == 0) {
+            
+            sprintf(chave_remocao, "%ld", matricula.id_matricula);
+            *MatriculaRaiz = Remove(*MatriculaRaiz, chave_remocao);
+
+            matricula.valido = false;
+            
+            fseek(fp, offset, SEEK_SET); 
+            fwrite(&matricula, sizeof(Matricula), 1, fp);
+            fseek(fp, offset + sizeof(Matricula), SEEK_SET); 
+            
+            printf("-> Matrícula (ID: %ld, Matricua do aluno: %s) removida em cascata.\n", matricula.id_matricula, matricula.matricula_aluno);
+        }
+        
+        offset += sizeof(Matricula);
+    }
+
+    fclose(fp);
+}

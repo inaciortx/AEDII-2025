@@ -23,5 +23,6 @@ typedef struct BTPage {
 BTPage* CriaNo( void ); 
 BTPage* Insere( BTPage *raiz, Chave key );
 int Busca( BTPage *no, char *chave );
+BTPage* Remove( BTPage *raiz, char *chave );
 
 #endif 

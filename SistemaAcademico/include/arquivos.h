@@ -43,18 +43,23 @@ void InsereDeArquivoDisciplina( BTPage **raiz );
 // Funções de arquivo de dados
 void AdicionaAlunoNoArquivo( Aluno aluno ); 
 void AdicionaDisciplinaNoArquivo( Disciplina disciplina ); 
-void AdicionaMatriculaNoArquivo( Matricula matricula ); 
+void AdicionaMatriculaNoArquivo( Matricula matricula );
+void RemoverMatriculasPorAluno(char *matricula_aluno, BTPage **MatriculaRaiz);
+void RemoverMatriculasPorDisciplina(char *codigo_disciplina, BTPage **MatriculaRaiz);
 
 void AtualizaAlunoDoArquivo( char *chave, BTPage *raiz ); 
 void AtualizaDisciplinaDoArquivo( char *chave, BTPage *raiz ); 
 void AtualizaMatriculaDoArquivo( char *chave, BTPage *raiz );
 void BuscaMatriculas( BTPage *alunos, BTPage *disciplinas, char *chave, int search );
+bool VerificaMatricula(char *aluno, char *disciplina);
 
 // Funções de arquivos de índice
 void SalvaBT( BTPage *no, FILE *fp ); 
 void CarregaBTAlunos( BTPage **raiz, FILE *fp );
 void CarregaBTDisciplinas( BTPage **raiz, FILE *fp );
 void CarregaBTMatriculas( BTPage **raiz, FILE *fp ); 
+
+
 
 
 #endif 

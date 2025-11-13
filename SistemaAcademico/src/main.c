@@ -58,7 +58,7 @@ int main ( void ) {
 
     index_alunos = fopen( "indexAlunos.idx", "wb" );
     SalvaBT( alunoRaiz, index_alunos );
-    fclose(index_alunos);
+    fclose( index_alunos );
 
     index_disciplinas = fopen( "indexDisciplinas.idx", "wb" );
     SalvaBT( disciplinaRaiz, index_disciplinas );
@@ -97,17 +97,17 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
             switch ( subMenu ) {
 
                 case 1:
-                    printf("Digite a matrícula do aluno:\n");
+                    printf("Digite a matrícula do aluno: ");
                     scanf("%s", aluno.matricula );
 
                     int teste = Busca( *AlunoRaiz, aluno.matricula );
                     if ( teste != -1 ) {
-                        printf("Já existe um aluno com essa matrícula no sistema!");
+                        printf("\nJá existe um aluno com essa matrícula no sistema!");
                         PrintaDadosAluno( teste );
                         break;
                     }
                     
-                    printf("Digite o nome do aluno:\n");
+                    printf("Digite o nome do aluno: ");
                     scanf(" %[^\n]", aluno.nome_do_aluno );
 
                     strcpy(key.chave, aluno.matricula);
@@ -119,7 +119,7 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                     break;
 
                 case 2:
-                    printf("Digite a matrícula do aluno:\n");
+                    printf("Digite a matrícula do aluno: ");
                     scanf("%s", aluno.matricula );
 
                     long int index = Busca( *AlunoRaiz, aluno.matricula);
@@ -133,9 +133,32 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                     break;
                 
                 case 3:
+                    printf("Digite a matrícula do aluno que quer remover: ");
+                    scanf("%s", aluno.matricula );
+
+                    index = Busca( *AlunoRaiz, aluno.matricula );
+                    if ( index == -1 ) {
+                        printf("\nAluno não encontrado no sistema!\n");
+                        break;
+                    }
+                    RemoverMatriculasPorAluno(aluno.matricula, MatriculaRaiz);
+                    *AlunoRaiz = Remove(*AlunoRaiz, aluno.matricula);
+
+                    FILE *fp = fopen("alunos_dados.dat", "r+b");
+                    if (fp) {
+                        Aluno aluno;
+                        fseek(fp, index * sizeof(Aluno), SEEK_SET);
+                        fread(&aluno, sizeof(Aluno), 1, fp);
+                        aluno.valido = false; 
+                        fseek(fp, index * sizeof(Aluno), SEEK_SET);
+                        fwrite(&aluno, sizeof(Aluno), 1, fp);
+                        fclose(fp);
+                    }
+        
+                    printf("Aluno removido com sucesso!\n");
                     break;
                 case 4: 
-                    printf("Digite a matrícula que quer atualizar:\n");
+                    printf("Digite a matrícula que quer atualizar: ");
                     scanf("%s", aluno.matricula );
                     AtualizaAlunoDoArquivo( aluno.matricula, *AlunoRaiz );
                     break;
@@ -156,19 +179,19 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
              switch ( subMenu ) {
 
                 case 1:
-                    printf("Digite o código da disciplina:\n");
+                    printf("Digite o código da disciplina: ");
                     scanf("%s", disciplina.codigo_disciplina );
 
                     int teste = Busca( *DisciplinaRaiz, disciplina.codigo_disciplina );
                     if ( teste != -1 ) {
-                        printf("Já existe uma disciplina com esse código no sistema!");
+                        printf("\nJá existe uma disciplina com esse código no sistema!");
                         PrintaDadosDisciplina( teste );
                         break;
                     }
 
-                    printf("Digite o nome do aluno:\n");
+                    printf("Digite o nome do aluno: ");
                     scanf(" %[^\n]", aluno.nome_do_aluno );
-                    printf("Digite o nome da disciplina:\n");
+                    printf("Digite o nome da disciplina: ");
                     scanf(" %[^\n]", disciplina.nome_da_disciplina );
 
                     strcpy(key.chave, disciplina.codigo_disciplina);
@@ -179,10 +202,10 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                     *DisciplinaRaiz = Insere( *DisciplinaRaiz, key );
                     break;
                 case 2:
-                    printf("Digite o código da disciplina:\n");
+                    printf("Digite o código da disciplina: ");
                     scanf("%s", disciplina.codigo_disciplina );
 
-                    long int index = Busca( *DisciplinaRaiz, disciplina.codigo_disciplina);
+                    int index = Busca( *DisciplinaRaiz, disciplina.codigo_disciplina);
 
                     if ( index != -1 ) {
                         PrintaDadosDisciplina( index );
@@ -191,10 +214,37 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                     }
                     break;
                 case 3:
-                    printf("Função nao implementada\n");
+                    printf("Digite o código da disciplina que quer remover: ");
+                    scanf("%s", disciplina.codigo_disciplina);
+
+                    index = Busca(*DisciplinaRaiz, disciplina.codigo_disciplina);
+                    
+                    if (index == -1) {
+                        printf("Disciplina não encontrada no sistema.\n");
+                        break;
+                    }
+                        
+                    RemoverMatriculasPorDisciplina(disciplina.codigo_disciplina, MatriculaRaiz);
+
+                    *DisciplinaRaiz = Remove(*DisciplinaRaiz, disciplina.codigo_disciplina);
+                    
+                    FILE *fp = fopen("disciplinas_dados.dat", "r+b");
+                    if (fp) {
+                        Disciplina disciplina;
+                        fseek(fp, index * sizeof(Disciplina), SEEK_SET);
+                        fread(&disciplina, sizeof(Disciplina), 1, fp);
+                        
+                        disciplina.valido = false; 
+                        
+                        fseek(fp, index * sizeof(Disciplina), SEEK_SET);
+                        fwrite(&disciplina, sizeof(Disciplina), 1, fp);
+                        fclose(fp);
+                    }
+                        
+                    printf("Disciplina removida com sucesso!\n");
                     break;
                 case 4: 
-                    printf("Digite o código da disciplina que quer atualizar:\n");
+                    printf("Digite o código da disciplina que quer atualizar: ");
                     scanf("%s", disciplina.codigo_disciplina );
                     AtualizaDisciplinaDoArquivo( disciplina.codigo_disciplina, *DisciplinaRaiz );
                     break;
@@ -228,6 +278,15 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                             printf("\n** Aluno não encontrado no sistema! **\n");
                             break;
                         }
+
+                        if ( VerificaMatricula( matricula.matricula_aluno, matricula.codigo_disciplina ) ) {
+                            printf("\n*O aluno ");
+                            PrintaNomeAluno( matricula.matricula_aluno, *AlunoRaiz );
+                            printf(" já esta matriculado na disciplina ");
+                            PrintaNomeDisciplina( matricula.codigo_disciplina, *DisciplinaRaiz );
+                            printf("*\n");
+                            break;
+                        }
                         matricula.id_matricula = indiceMatricula;
                         matricula.media_final = 0.0;
                         matricula.valido = true;
@@ -257,9 +316,45 @@ void Menu ( BTPage **AlunoRaiz, BTPage **DisciplinaRaiz, BTPage **MatriculaRaiz 
                                 break;
                         }
                         break;
-                    case 3:
-                        printf("Função nao implementada\n");
+                    case 3: {
+                        long int id_digitado;
+                        printf("Digite o ID da matrícula a cancelar: ");
+                        scanf("%ld", &id_digitado);
+
+                        char chave_remocao[20];
+                        sprintf(chave_remocao, "%ld", id_digitado);
+
+                        long int index = Busca(*MatriculaRaiz, chave_remocao);
+
+                        if (index == -1) {
+                            printf("\nMatrícula não encontrada no sistema!\n");
+                            break;
+                        }
+
+                        *MatriculaRaiz = Remove(*MatriculaRaiz, chave_remocao);
+
+                        FILE *fp = fopen("matriculas_dados.dat", "r+b");
+                        if (fp != NULL) {
+                            Matricula matricula;
+
+                            fseek(fp, index * sizeof(Matricula), SEEK_SET);
+                            fread(&matricula, sizeof(Matricula), 1, fp);
+                            
+                            if (matricula.valido) {
+                                matricula.valido = false; 
+                                
+                                fseek(fp, index * sizeof(Matricula), SEEK_SET);
+                                fwrite(&matricula, sizeof(Matricula), 1, fp);
+                                
+                                printf("Matrícula ID %ld removida com sucesso!\n", id_digitado);
+                            } else {
+                                printf("Esta matrícula já estava removida.\n");
+                            }
+                            
+                            fclose(fp);
+                        }
                         break;
+                    }
                     case 4:
                         printf("Digite o ID de matricula: ");
                         scanf("%s", key.chave );
